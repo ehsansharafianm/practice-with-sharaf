@@ -87,6 +87,10 @@ its **sounds (IPA)**, its **stressed syllable** and its **meaning** (found for y
 Learn your words with **flashcards** (words you miss come back sooner) and a **quiz** (word → meaning, meaning → word, or just listening).
 Vocabulary has no ready-made lists: it is only the words you add.
 
+**⭐ Sentences:** keep the sentences you love. Paste or type them, or just **say** them 🎙️. Each one is read aloud ▶ (also slowly),
+you can **test yourself** (say it and see which words were right, with a score), and **review** them all, weakest first, even with the text hidden
+for listening practice. Spanish sentences get their English meaning.
+
 ## ✍️ Dictation
 
 Listen to a word and write it. Learn new words, review old ones (weaker words come back more often), and track your daily score.
@@ -98,6 +102,7 @@ Listen to a word and write it. Learn new words, review old ones (weaker words co
 | 🇬🇧 🇪🇸 **English or Spanish** | Every tool in both languages, with separate progress |
 | 🎬 **Shadow a video** | Shadow real speakers from YouTube, sentence by sentence |
 | 📚 **Vocabulary** | Your own word library (type or say a word), meanings, IPA and stress, flashcards and a quiz |
+| ⭐ **Sentences** | Save sentences you like (paste, type or say them), listen, test yourself and review |
 | 🔁 **Shadow a sentence or text** | Repeat after a natural American voice, with a melody chart of your voice |
 | ⭐ **Favorites** | Your own sentences to practise again and again |
 | 🗣️ **Pronunciation** | IPA, syllables and stress for any word, with recording and feedback |

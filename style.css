@@ -687,3 +687,20 @@ code { background: var(--bg); padding: 1px 6px; border-radius: 6px; font-size: .
 .word-grid.one { grid-template-columns: minmax(0, 420px); }
 .m-done .wcard { background: var(--card); }
 .lib-item-tag { font-size: .72rem; color: var(--muted); }
+
+/* Vocabulary: favorite sentences */
+#sNew { display: block; width: 100%; padding: 12px 14px; font: inherit; font-size: 1.05rem; resize: vertical; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+.sent-list { display: flex; flex-direction: column; gap: 10px; }
+.sent-item { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--bg); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.sent-text { font-size: 1.15rem; font-weight: 600; overflow-wrap: anywhere; }
+.sent-en { color: var(--muted); font-size: .95rem; }
+.sent-meta { font-size: .8rem; color: var(--muted); }
+.sent-acts { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.sent-acts .del { margin-left: auto; }
+.sent-show { text-align: center; margin: 18px 0 10px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.sent-show .sent-text { font-size: 1.5rem; }
+.sent-hidden { color: var(--muted); font-size: 1.1rem; letter-spacing: .2em; }
+.sent-words { font-size: 1.15rem; line-height: 1.8; }
+.sent-words .hit { color: var(--good); font-weight: 600; }
+.sent-words .miss { color: var(--bad); text-decoration: underline wavy; font-weight: 600; }
+.sent-item.fresh { border-color: var(--good); box-shadow: 0 0 0 2px var(--good-bg); }

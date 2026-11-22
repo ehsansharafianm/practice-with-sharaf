@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="../style.css?v=20261120z">
+  <link rel="stylesheet" href="../style.css?v=20261121a">
   <script src="../site.js?v=20261121a"></script>
 </head>
 <body>
@@ -29,6 +29,7 @@
     <button class="tab" data-tab="quiz" role="tab">Quiz</button>
     <button class="tab" data-tab="mine" role="tab">➕ Add word</button>
     <button class="tab" data-tab="library" role="tab">📚 My library</button>
+    <button class="tab" data-tab="sents" role="tab">⭐ Sentences</button>
   </nav>
 
   <main id="vocabMain">
@@ -174,12 +175,58 @@
         <div id="mGrid" class="word-grid"></div>
       </div>
     </section>
+
+    <!-- ============ FAVORITE SENTENCES ============ -->
+    <section id="tab-sents" class="panel">
+      <div id="sAddCard" class="card">
+        <h2>Add sentences you like</h2>
+        <p class="hint" id="sHint"></p>
+        <textarea id="sNew" rows="3" maxlength="2000" aria-label="Sentences to add" spellcheck="true"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button id="sAdd" class="btn primary" type="button">⭐ Add</button>
+          <button id="sSayBtn" class="btn mic-btn" type="button">🎙️ Say a sentence</button>
+        </div>
+        <p id="sMsg" class="hint" aria-live="polite"></p>
+      </div>
+
+      <div id="sListCard" class="card">
+        <div class="lib-head">
+          <h2>My sentences <span id="sCount" class="muted"></span></h2>
+          <input id="sSearch" type="search" placeholder="Search…" aria-label="Search my sentences">
+        </div>
+        <div class="row" style="margin-top:0; margin-bottom:12px">
+          <button id="sReview" class="btn nav-btn" type="button">🔁 Review my sentences</button>
+          <label class="check slow-check"><input type="checkbox" id="sHide"> 🙈 Hide the text when I review (listening practice)</label>
+        </div>
+        <div id="sEmpty" class="empty hidden">No sentences yet. Add one above: paste it, type it, or say it with 🎙️.</div>
+        <div id="sList" class="sent-list"></div>
+      </div>
+
+      <div id="sRun" class="card hidden">
+        <div class="run-head"><span id="sProgress" class="counter"></span><button id="sStop" class="btn ghost small" type="button">Stop</button></div>
+        <div class="progress"><div id="sBar" class="bar"></div></div>
+        <div id="sShow" class="sent-show"></div>
+        <div class="row center">
+          <button id="sListen" class="btn listen-btn" type="button">▶ Listen</button>
+          <button id="sSlow" class="btn ghost" type="button">🐢 Slowly</button>
+          <button id="sTest" class="btn mic-btn big-go" type="button">🎙️ Say it</button>
+          <button id="sReveal" class="btn ghost hidden" type="button">👁️ Show the text</button>
+        </div>
+        <div id="sResult" aria-live="polite"></div>
+        <div class="row center"><button id="sNext" class="btn nav-btn" type="button">Next ⏭</button></div>
+      </div>
+      <div id="sDone" class="card hidden">
+        <h2>Review finished</h2>
+        <div id="sSummary" class="summary"></div>
+        <div class="row"><button id="sBack" class="btn primary" type="button">Back to my sentences</button></div>
+      </div>
+    </section>
   </main>
 
   <footer class="foot"><a class="home-link" href="../">Practice with Sharaf</a> · Vocabulary</footer>
   <script src="../spanish.js?v=20261120a"></script>
   <script src="../english.js?v=20261120a"></script>
-  <script src="app.js?v=20261120k"></script>
-  <script type="module" src="../account.js?v=20261120z"></script>
+  <script src="app.js?v=20261121d"></script>
+  <script type="module" src="../account.js?v=20261121a"></script>
 </body>
 </html>

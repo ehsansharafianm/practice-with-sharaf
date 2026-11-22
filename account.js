@@ -78,7 +78,7 @@ async function start() {
   // Vocabulary keeps the learner's progress and own library in vocab (English) or es.vocab (Spanish).
   api.saveVocab = async (v) => {
     if (!api.user) return;
-    await put('vocab', JSON.parse(JSON.stringify({ words: v.words || {}, mine: v.mine || [], days: v.days || {} })));
+    await put('vocab', JSON.parse(JSON.stringify({ words: v.words || {}, mine: v.mine || [], sents: v.sents || [], days: v.days || {} })));
   };
   api.listStudents = async () => {
     const snap = await F.getDocs(F.collection(fs, 'users'));

@@ -37,8 +37,8 @@
   // ---------- storage ----------
   // words: { [spanish]: { box, right, wrong, last } }, mine: [{ es, en, added }], days: { date: { tries, correct, score, newWords } }
   function load(key = storeKey) {
-    try { const d = JSON.parse(localStorage.getItem(key) || 'null'); if (d) return { words: d.words || {}, mine: d.mine || [], days: d.days || {} }; } catch (e) { /* ignore */ }
-    return { words: {}, mine: [], days: {} };
+    try { const d = JSON.parse(localStorage.getItem(key) || 'null'); if (d) return { words: d.words || {}, mine: d.mine || [], sents: d.sents || [], days: d.days || {} }; } catch (e) { /* ignore */ }
+    return { words: {}, mine: [], sents: [], days: {} };
   }
   let db = load();
   function save() {
@@ -51,7 +51,12 @@
   }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && cloudTimer) flushCloud(); });
   function merge(a, b) {
-    const out = { words: JSON.parse(JSON.stringify(a.words || {})), mine: (a.mine || []).map((w) => ({ ...w })), days: JSON.parse(JSON.stringify(a.days || {})) };
+    const out = { words: JSON.parse(JSON.stringify(a.words || {})), mine: (a.mine || []).map((w) => ({ ...w })), sents: (a.sents || []).map((x) => ({ ...x })), days: JSON.parse(JSON.stringify(a.days || {})) };
+    (b.sents || []).forEach((x) => {
+      const y = out.sents.find((z) => plain(z.text) === plain(x.text));
+      if (!y) out.sents.push({ ...x });
+      else { y.tries = Math.max(y.tries || 0, x.tries || 0); y.best = Math.max(y.best || 0, x.best || 0); if ((x.last || 0) > (y.last || 0)) { y.last = x.last; y.lastPct = x.lastPct; } if (!y.en && x.en) y.en = x.en; }
+    });
     Object.entries(b.words || {}).forEach(([k, v]) => {
       const x = out.words[k];
       if (!x || (v.last || 0) > (x.last || 0)) out.words[k] = { ...v, right: Math.max(v.right || 0, (x || {}).right || 0), wrong: Math.max(v.wrong || 0, (x || {}).wrong || 0) };
@@ -70,7 +75,7 @@
       storeKey = STORE_KEY + ':' + user.uid;
       let cloud = null;
       try { cloud = await window.PEWE.load(); cloudOK = true; } catch (err) { console.warn('Could not load account data', err); }
-      db = merge(merge((cloud && cloud.vocab) || { words: {}, mine: [], days: {} }, load(storeKey)), load(STORE_KEY));
+      db = merge(merge((cloud && cloud.vocab) || { words: {}, mine: [], sents: [], days: {} }, load(storeKey)), load(STORE_KEY));
       try { localStorage.removeItem(STORE_KEY); } catch (err) { /* ignore */ }
       save();
       if (cloudOK) flushCloud();
@@ -641,6 +646,228 @@
     inp.insertAdjacentElement('afterend', bar);
   }
 
+  // ---------- ⭐ Favorite sentences ----------
+  // db.sents: [{ id, text, en (Spanish: English meaning), added, tries, best, lastPct, last }]
+  const sid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const smsg = (t) => { $('sMsg').textContent = t; };
+  $('sNew').placeholder = ES ? 'Paste or type sentences here, one per line.\nPor ejemplo: Más vale tarde que nunca.' : 'Paste or type sentences here, one per line.\nFor example: Better late than never.';
+  $('sHint').innerHTML = `Three ways: <b>paste</b> or <b>type</b> sentences (one per line), or click <b>🎙️ Say a sentence</b> and say it.
+    Every sentence can be read aloud ▶ and you can test yourself 🎙️: say it and see which words were right.${ES ? ' The English meaning is found for you (MyMemory translation).' : ''}`;
+  // Spanish letters for the sentence box
+  if (ES) {
+    const box = $('sNew');
+    const bar = document.createElement('div');
+    bar.className = 'accent-keys left';
+    bar.style.marginTop = '8px';
+    bar.innerHTML = ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ', '¿', '¡'].map((c) => `<button type="button" tabindex="-1" data-ch="${c}">${c}</button>`).join('');
+    bar.addEventListener('mousedown', (e) => e.preventDefault());
+    bar.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-ch]'); if (!b) return;
+      const a = box.selectionStart ?? box.value.length, z = box.selectionEnd ?? a;
+      box.value = box.value.slice(0, a) + b.dataset.ch + box.value.slice(z);
+      box.setSelectionRange(a + 1, a + 1); box.focus();
+    });
+    box.insertAdjacentElement('afterend', bar);
+  }
+  // Lines and sentence ends (. ? !) split the text into sentences.
+  function splitSentences(text) {
+    const out = [];
+    String(text || '').replace(/\r/g, '').split('\n').forEach((line) => {
+      clean(line).split(/(?<=[.!?…])\s+(?=[¿¡"“'(]?\p{Lu})/u).forEach((x) => { x = clean(x); if (x && /\p{L}/u.test(x)) out.push(x); });
+    });
+    return out;
+  }
+  const capital = (t) => { const m = t.match(/^[¿¡"“'(]*/)[0]; return m + (t[m.length] || '').toUpperCase() + t.slice(m.length + 1); };
+  async function translate(text) {
+    try {
+      const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 9000);
+      const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 480))}&langpair=es|en`, { signal: ctl.signal });
+      clearTimeout(t);
+      const tr = clean((((await r.json()) || {}).responseData || {}).translatedText || '').replace(/\s*~.*$/, ''); // drop tags like "~ English Proverb"
+      return tr && plain(tr) !== plain(text) && !/MYMEMORY WARNING|INVALID/i.test(tr) ? tr : '';
+    } catch (e) { return ''; }
+  }
+  $('sAdd').addEventListener('click', async () => {
+    const list = splitSentences($('sNew').value).map(capital);
+    if (!list.length) { smsg('Paste, type or say a sentence first.'); $('sNew').focus(); return; }
+    let added = 0, had = 0;
+    const fresh = [];
+    list.forEach((text) => {
+      if (db.sents.some((x) => plain(x.text) === plain(text))) { had++; return; }
+      const it = { id: sid(), text, en: '', added: todayKey(), tries: 0, best: 0, lastPct: null, last: 0 };
+      db.sents.unshift(it); fresh.push(it); added++;
+    });
+    save();
+    $('sNew').value = '';
+    smsg(added ? `⭐ Added ${added} sentence${added === 1 ? '' : 's'}.${had ? ` ${had} ${had === 1 ? 'was' : 'were'} already saved.` : ''} Listen ▶ or test yourself 🎙️ below.` : 'These sentences are already saved.');
+    renderSents(fresh.map((x) => x.id));
+    if (fresh[0]) say(fresh[0].text);
+    // the English meaning (looked up again by id: the saved data may have been reloaded meanwhile, e.g. after signing in)
+    if (ES) for (const it of fresh) { const en = await translate(it.text); const cur = db.sents.find((x) => x.id === it.id); if (en && cur) { cur.en = en; save(); renderSents(); } }
+  });
+  // 🎙️ Say a sentence: what the browser hears goes into the box, so it can be checked before adding.
+  let sRec = null;
+  function hearSentence() {
+    return new Promise((resolve) => {
+      const r = new SR();
+      let text = '', error = '';
+      r.lang = L.bcp; r.maxAlternatives = 1; r.interimResults = false; r.continuous = false;
+      r.onresult = (e) => { text = Array.from(e.results).map((x) => x[0].transcript).join(' '); };
+      r.onerror = (e) => { error = e.error; };
+      r.onend = () => { sRec = null; resolve({ text: clean(text), error }); };
+      sRec = r;
+      try { r.start(); } catch (e) { sRec = null; resolve({ text: '', error: 'busy' }); }
+    });
+  }
+  $('sSayBtn').addEventListener('click', async () => {
+    if (!SR) { smsg('Saying a sentence works in Chrome and Edge. Please type it instead.'); return; }
+    if (sRec) { sRec.stop(); return; }
+    if (canSpeak) speechSynthesis.cancel();
+    const btn = $('sSayBtn');
+    btn.classList.add('on'); btn.textContent = '👂 Listening… (click to stop)'; smsg('');
+    const { text, error } = await hearSentence();
+    btn.classList.remove('on'); btn.textContent = '🎙️ Say a sentence';
+    if (!text) { smsg(error === 'not-allowed' || error === 'service-not-allowed' ? 'Please allow the microphone for this site, then try again.' : 'I could not catch a sentence. Try again and speak clearly, or type it.'); return; }
+    let t = capital(text);
+    if (!/[.!?]$/.test(t)) {
+      // a question starts with a question word (or, in English, a helping verb): end it with ? (Spanish: ¿…?)
+      const first = plain(t.split(' ')[0]);
+      const Q = ES ? /^(que|quien|quienes|cual|cuales|como|donde|adonde|cuando|cuanto|cuanta|cuantos|cuantas|por)$/
+        : /^(what|where|when|why|who|whom|whose|which|how|do|does|did|is|are|was|were|can|could|will|would|should|have|has|may)$/i;
+      const q = Q.test(first) && (first !== 'por' || plain(t.split(' ')[1] || '') === 'que');
+      t += q ? '?' : '.';
+      if (q && ES) t = '¿' + t;
+    }
+    const box = $('sNew');
+    box.value = (box.value.trim() ? box.value.trim() + '\n' : '') + t;
+    smsg(`🎙️ I heard: “${t}”. Check the text in the box (fix it if needed), then click ⭐ Add.`);
+    box.focus();
+  });
+
+  // Compare what was said with the sentence: which words were heard (in order). -> { pct, html }
+  function compareSentence(target, heard) {
+    const tw = clean(target).split(' ').filter((w) => plain(w));
+    const T = tw.map(plain), H = plain(heard).split(' ').filter(Boolean);
+    const eq = (a, b) => a === b || (ES && P && P.key(a) === P.key(b));
+    const n = T.length, m = H.length, Lc = Array.from({ length: n + 1 }, () => new Int16Array(m + 1));
+    for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) Lc[i][j] = eq(T[i], H[j]) ? Lc[i + 1][j + 1] + 1 : Math.max(Lc[i + 1][j], Lc[i][j + 1]);
+    const hit = new Array(n).fill(false);
+    let i = 0, j = 0;
+    while (i < n && j < m) { if (eq(T[i], H[j])) { hit[i] = true; i++; j++; } else if (Lc[i + 1][j] >= Lc[i][j + 1]) i++; else j++; }
+    const pct = n ? Math.round((hit.filter(Boolean).length / n) * 100) : 0;
+    return { pct, html: `<div class="sent-words" lang="${L.code}">${tw.map((w, k) => `<span class="${hit[k] ? 'hit' : 'miss'}">${esc(w)}</span>`).join(' ')}</div>` };
+  }
+  // Listen to the learner say a sentence and score it; records the try. -> result html
+  async function testSentence(it, btn, out) {
+    if (!SR) { out.innerHTML = '<p class="feedback wrong">Testing your speech works in Chrome and Edge.</p>'; return null; }
+    if (sRec) { sRec.stop(); return null; }
+    if (canSpeak) speechSynthesis.cancel();
+    const label = btn.textContent;
+    btn.classList.add('on'); btn.textContent = '👂 Say it now… (click to stop)';
+    out.innerHTML = '<p class="hint">Say the sentence now.</p>';
+    const { text, error } = await hearSentence();
+    btn.classList.remove('on'); btn.textContent = label;
+    if (!text) { out.innerHTML = `<p class="feedback wrong">${error === 'not-allowed' || error === 'service-not-allowed' ? 'Please allow the microphone for this site, then try again.' : 'I did not hear anything. Try again and speak clearly.'}</p>`; return null; }
+    const c = compareSentence(it.text, text);
+    it.tries = (it.tries || 0) + 1; it.best = Math.max(it.best || 0, c.pct); it.lastPct = c.pct; it.last = Date.now();
+    const d = day(); d.tries++; if (c.pct >= 80) { d.correct++; d.score += POINTS; }
+    save(); updateChip();
+    const cls = c.pct >= 80 ? 'good' : c.pct >= 50 ? 'mid' : 'low';
+    out.innerHTML = `<div class="pscore ${cls}"><span class="pscore-num">${c.pct}%</span><span class="pscore-lbl">of the words were right${c.pct >= 80 ? ` · +${POINTS} points` : ''}</span></div>
+      ${c.html}<p class="hint">I heard: “${esc(text)}”</p>`;
+    return c.pct;
+  }
+
+  function sentHtml(it, fresh) {
+    const meta = it.tries ? `best ${it.best}% · last ${it.lastPct}% · ${it.tries} ${it.tries === 1 ? 'try' : 'tries'}` : 'not tested yet';
+    return `<div class="sent-item${fresh ? ' fresh' : ''}" data-id="${esc(it.id)}">
+      <div class="sent-text" lang="${L.code}">${esc(it.text)}</div>
+      ${it.en ? `<div class="sent-en">${esc(it.en)}</div>` : ''}
+      <div class="sent-meta">${meta}</div>
+      <div class="sent-acts">
+        <button type="button" class="btn listen-btn small" data-sact="say">▶ Listen</button>
+        <button type="button" class="btn ghost small" data-sact="slow">🐢 Slowly</button>
+        <button type="button" class="btn mic-btn small" data-sact="test">🎙️ Test it</button>
+        <button type="button" class="del" data-sact="del" title="Delete">✕</button>
+      </div>
+      <div class="sent-res" aria-live="polite"></div>
+    </div>`;
+  }
+  let lastFresh = [];
+  function renderSents(freshIds = lastFresh) {
+    lastFresh = freshIds;
+    const q = plain($('sSearch').value);
+    const list = db.sents.filter((x) => !q || plain(x.text).includes(q) || plain(x.en || '').includes(q));
+    $('sCount').textContent = db.sents.length ? `(${db.sents.length})` : '';
+    $('sEmpty').classList.toggle('hidden', db.sents.length > 0);
+    $('sReview').disabled = !db.sents.length;
+    $('sList').innerHTML = list.map((x) => sentHtml(x, freshIds.includes(x.id))).join('') || (db.sents.length ? '<p class="empty">No sentences found.</p>' : '');
+  }
+  $('sSearch').addEventListener('input', () => renderSents());
+  $('sList').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-sact]'), item = e.target.closest('.sent-item');
+    if (!b || !item) return;
+    const it = db.sents.find((x) => x.id === item.dataset.id);
+    if (!it) return;
+    const act = b.dataset.sact;
+    if (act === 'say') say(it.text);
+    else if (act === 'slow') say(it.text, true);
+    else if (act === 'del') { if (confirm(`Delete this sentence?\n\n${it.text}`)) { db.sents = db.sents.filter((x) => x !== it); save(); renderSents(); } }
+    else if (act === 'test') {
+      const out = item.querySelector('.sent-res');
+      const pct = await testSentence(it, b, out);
+      if (pct !== null) item.querySelector('.sent-meta').textContent = `best ${it.best}% · last ${it.lastPct}% · ${it.tries} ${it.tries === 1 ? 'try' : 'tries'}`;
+    }
+  });
+
+  // ---- Review: one sentence after another, weakest first ----
+  const rv = { list: [], i: 0, scores: [] };
+  $('sReview').addEventListener('click', () => {
+    if (!db.sents.length) return;
+    rv.list = db.sents.slice().sort((a, b) => (a.tries ? a.best : -1) - (b.tries ? b.best : -1) || (a.last || 0) - (b.last || 0));
+    rv.i = 0; rv.scores = [];
+    hide('sAddCard', 'sListCard', 'sDone'); show('sRun');
+    reviewStep();
+  });
+  function reviewStep() {
+    const it = rv.list[rv.i];
+    const hidden = $('sHide').checked;
+    $('sProgress').textContent = `Sentence ${rv.i + 1} of ${rv.list.length}`;
+    $('sBar').style.width = Math.round((rv.i / rv.list.length) * 100) + '%';
+    $('sShow').innerHTML = hidden
+      ? `<div class="sent-hidden">• • • listen and repeat • • •</div>`
+      : `<div class="sent-text" lang="${L.code}">${esc(it.text)}</div>${it.en ? `<div class="sent-en">${esc(it.en)}</div>` : ''}`;
+    $('sReveal').classList.toggle('hidden', !hidden);
+    $('sResult').innerHTML = '';
+    $('sNext').textContent = rv.i + 1 >= rv.list.length ? 'Finish ✓' : 'Next ⏭';
+    say(it.text);
+  }
+  $('sListen').addEventListener('click', () => say(rv.list[rv.i].text));
+  $('sSlow').addEventListener('click', () => say(rv.list[rv.i].text, true));
+  $('sReveal').addEventListener('click', () => {
+    const it = rv.list[rv.i];
+    $('sShow').innerHTML = `<div class="sent-text" lang="${L.code}">${esc(it.text)}</div>${it.en ? `<div class="sent-en">${esc(it.en)}</div>` : ''}`;
+    hide('sReveal');
+  });
+  $('sTest').addEventListener('click', async () => {
+    const pct = await testSentence(rv.list[rv.i], $('sTest'), $('sResult'));
+    if (pct !== null) { rv.scores[rv.i] = pct; if ($('sHide').checked) $('sReveal').click(); }
+  });
+  function reviewDone() {
+    if (sRec) sRec.stop();
+    if (canSpeak) speechSynthesis.cancel();
+    hide('sRun'); show('sDone');
+    const done = rv.scores.filter((x) => x !== undefined);
+    const avg = done.length ? Math.round(done.reduce((a, b) => a + b, 0) / done.length) : null;
+    const weak = rv.list.filter((x, k) => rv.scores[k] !== undefined && rv.scores[k] < 80);
+    $('sSummary').innerHTML = `<div class="big-num">${avg === null ? '–' : avg + '%'}</div>
+      <div class="line">average over ${done.length} tested sentence${done.length === 1 ? '' : 's'} (of ${rv.list.length}) · today's score: <b>${(db.days[todayKey()] || {}).score || 0}</b> points</div>
+      ${weak.length ? `<div class="line">To practise again: ${weak.map((x) => `<b lang="${L.code}">${esc(x.text)}</b>`).join(' · ')}</div>` : ''}`;
+  }
+  $('sNext').addEventListener('click', () => { if (sRec) sRec.stop(); rv.i++; if (rv.i >= rv.list.length) reviewDone(); else reviewStep(); });
+  $('sStop').addEventListener('click', reviewDone);
+  $('sBack').addEventListener('click', () => { hide('sDone', 'sRun'); show('sAddCard', 'sListCard'); renderSents(); });
+
   // ---------- tabs ----------
   let curTab = 'learn';
   function showTab(name) {
@@ -652,6 +879,7 @@
     if (name === 'cards') fillTopicSelect($('cTopic'));
     if (name === 'quiz') fillTopicSelect($('qTopic'));
     if (name === 'library') renderMine();
+    if (name === 'sents') { if (!$('sRun').classList.contains('hidden') || !$('sDone').classList.contains('hidden')) { /* keep the review */ } else renderSents(); }
   }
   document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
   // Progress of words that are no longer in the library (the old built-in lists) is dropped.
@@ -662,6 +890,6 @@
     if (changed) save();
   }
   function refresh() { prune(); updateChip(); showTab(curTab); }
-  window.__peweVocabTest = { saidRight, ipaOf, wordsOf, db: () => db }; // for developer checks
+  window.__peweVocabTest = { saidRight, ipaOf, wordsOf, db: () => db, splitSentences, compareSentence }; // for developer checks
   refresh();
 })();
