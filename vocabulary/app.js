@@ -652,7 +652,8 @@
   const smsg = (t) => { $('sMsg').textContent = t; };
   $('sNew').placeholder = ES ? 'Paste or type sentences here, one per line.\nPor ejemplo: Más vale tarde que nunca.' : 'Paste or type sentences here, one per line.\nFor example: Better late than never.';
   $('sHint').innerHTML = `Three ways: <b>paste</b> or <b>type</b> sentences (one per line), or click <b>🎙️ Say a sentence</b> and say it.
-    Every sentence can be read aloud ▶ and you can test yourself 🎙️: say it and see which words were right.${ES ? ' The English meaning is found for you (MyMemory translation).' : ''}`;
+    Then shadow it like on the Shadowing page: <b>🔁 Listen, then repeat</b> plays the sentence and records you right after, and you get a score
+    for your words, your melody and your speed, with a chart of your voice and tips. <b>🎧 My voice</b> plays your try back.${ES ? ' The English meaning is found for you (MyMemory translation).' : ''}`;
   // Spanish letters for the sentence box
   if (ES) {
     const box = $('sNew');
@@ -699,11 +700,13 @@
     });
     save();
     $('sNew').value = '';
-    smsg(added ? `⭐ Added ${added} sentence${added === 1 ? '' : 's'}.${had ? ` ${had} ${had === 1 ? 'was' : 'were'} already saved.` : ''} Listen ▶ or test yourself 🎙️ below.` : 'These sentences are already saved.');
+    smsg(added ? `⭐ Added ${added} sentence${added === 1 ? '' : 's'}.${had ? ` ${had} ${had === 1 ? 'was' : 'were'} already saved.` : ''} Practise it now: 🔁 Listen, then repeat (below).` : 'These sentences are already saved.');
     renderSents(fresh.map((x) => x.id));
-    if (fresh[0]) say(fresh[0].text);
+    const first = fresh[0] && $('sList').querySelector(`.sent-item[data-id="${fresh[0].id}"]`);
+    if (first) { first.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); first.querySelector('[data-sact=go]').focus(); }
+    if (fresh[0]) SC ? SC.speak(fresh[0].text, { box: first && first.querySelector('.sent-text'), voice: voice(), rate: rate() }) : say(fresh[0].text);
     // the English meaning (looked up again by id: the saved data may have been reloaded meanwhile, e.g. after signing in)
-    if (ES) for (const it of fresh) { const en = await translate(it.text); const cur = db.sents.find((x) => x.id === it.id); if (en && cur) { cur.en = en; save(); renderSents(); } }
+    if (ES) for (const it of fresh) { const en = await translate(it.text); const cur = db.sents.find((x) => x.id === it.id); if (en && cur) { cur.en = en; save(); showMeaning(cur); } }
   });
   // 🎙️ Say a sentence: what the browser hears goes into the box, so it can be checked before adding.
   let sRec = null;
@@ -744,54 +747,98 @@
     box.focus();
   });
 
-  // Compare what was said with the sentence: which words were heard (in order). -> { pct, html }
+  // ---- Shadowing practice for a sentence (the same engine and score as the Shadowing page) ----
+  const SC = window.SHADOW_CORE ? window.SHADOW_CORE(L) : null;
+  const voices = {}; // sentence id -> my last recording
+  const rate = () => ($('sSlowAll').checked ? 0.7 : 0.95);
+  let shadowBusy = null; // { stop } while one try is going on
+  // compareSentence: words only (kept for developer checks)
   function compareSentence(target, heard) {
     const tw = clean(target).split(' ').filter((w) => plain(w));
     const T = tw.map(plain), H = plain(heard).split(' ').filter(Boolean);
     const eq = (a, b) => a === b || (ES && P && P.key(a) === P.key(b));
     const n = T.length, m = H.length, Lc = Array.from({ length: n + 1 }, () => new Int16Array(m + 1));
     for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) Lc[i][j] = eq(T[i], H[j]) ? Lc[i + 1][j + 1] + 1 : Math.max(Lc[i + 1][j], Lc[i][j + 1]);
-    const hit = new Array(n).fill(false);
-    let i = 0, j = 0;
-    while (i < n && j < m) { if (eq(T[i], H[j])) { hit[i] = true; i++; j++; } else if (Lc[i + 1][j] >= Lc[i][j + 1]) i++; else j++; }
-    const pct = n ? Math.round((hit.filter(Boolean).length / n) * 100) : 0;
-    return { pct, html: `<div class="sent-words" lang="${L.code}">${tw.map((w, k) => `<span class="${hit[k] ? 'hit' : 'miss'}">${esc(w)}</span>`).join(' ')}</div>` };
+    let i = 0, j = 0, hits = 0;
+    while (i < n && j < m) { if (eq(T[i], H[j])) { hits++; i++; j++; } else if (Lc[i + 1][j] >= Lc[i][j + 1]) i++; else j++; }
+    return { pct: n ? Math.round((hits / n) * 100) : 0 };
   }
-  // Listen to the learner say a sentence and score it; records the try. -> result html
-  async function testSentence(it, btn, out) {
-    if (!SR) { out.innerHTML = '<p class="feedback wrong">Testing your speech works in Chrome and Edge.</p>'; return null; }
-    if (sRec) { sRec.stop(); return null; }
+  // One try: the voice reads the sentence (words light up), then the learner repeats it; then the score.
+  // ui: { box (sentence with .sw words), go (button), mine (My voice button), out (result), status (optional) }
+  async function shadowSentence(it, ui) {
+    if (shadowBusy) { shadowBusy.stop(); return null; }
+    if (!SC) { ui.out.innerHTML = '<p class="feedback wrong">The practice tools did not load. Reload the page.</p>'; return null; }
+    if (!SC.hasSR && !SC.canRecord) { ui.out.innerHTML = '<p class="feedback wrong">Recording is not supported in this browser. Try Chrome or Edge.</p>'; return null; }
+    let stopped = false;
+    shadowBusy = { stop: () => { stopped = true; if (canSpeak) speechSynthesis.cancel(); SC.stopMic(); } };
+    const label = ui.go.textContent;
+    const status = (t) => { if (ui.status) ui.status.innerHTML = t; };
+    ui.go.classList.add('on'); ui.out.innerHTML = '';
+    try {
+      ui.go.textContent = '👂 Listen… (click to stop)'; status('Listen to the voice…');
+      const est = Math.max(2, SC.wordsOf(it.text).length * 0.45 * (rate() < 0.9 ? 1.4 : 1));
+      const modelSec = await SC.speak(it.text, { box: ui.box, voice: voice(), rate: rate() });
+      if (stopped) return null;
+      ui.go.textContent = '🎙️ Your turn! (click when done)'; status('<b>Your turn:</b> say it now, the same way.');
+      const r = await SC.listenOnce(Math.max(modelSec, est) * 2 + 4);
+      status('');
+      if (stopped && !r.heard && !r.audio) return null;
+      if (r.error && !r.heard && SC.micMessage(r.error)) { ui.out.innerHTML = `<p class="feedback wrong">${esc(SC.micMessage(r.error))}</p>`; return null; }
+      status('Checking…');
+      let a = null;
+      if (r.audio) { try { a = await SC.analyse(r.audio); } catch (e) { console.warn('Analysis failed', e); } }
+      const res = await SC.scoreTry({ text: it.text }, r.heard, a, SC.hasSR, POINTS);
+      status('');
+      if (r.audio) { if (voices[it.id]) URL.revokeObjectURL(voices[it.id]); voices[it.id] = r.audio; }
+      if (ui.mine) { ui.mine.disabled = !voices[it.id]; ui.mine.title = voices[it.id] ? 'Hear your last try' : 'Say the sentence first'; }
+      if (res.pct !== null) {
+        const cur = db.sents.find((x) => x.id === it.id) || it;
+        cur.tries = (cur.tries || 0) + 1; cur.best = Math.max(cur.best || 0, res.pct); cur.lastPct = res.pct; cur.last = Date.now();
+        const d = day(); d.tries++; if (res.pct >= 80) { d.correct++; d.score += POINTS; }
+        save(); updateChip();
+      }
+      ui.out.innerHTML = res.html;
+      return res.pct;
+    } finally {
+      shadowBusy = null;
+      ui.go.classList.remove('on'); ui.go.textContent = label === '🔁 Listen, then repeat' ? '🔁 Again' : label;
+      if (ui.go.textContent === '👂 Listen… (click to stop)' || ui.go.textContent === '🎙️ Your turn! (click when done)') ui.go.textContent = '🔁 Again';
+    }
+  }
+  let playing = null;
+  function playVoice(id) {
+    const url = voices[id];
+    if (!url) return;
     if (canSpeak) speechSynthesis.cancel();
-    const label = btn.textContent;
-    btn.classList.add('on'); btn.textContent = '👂 Say it now… (click to stop)';
-    out.innerHTML = '<p class="hint">Say the sentence now.</p>';
-    const { text, error } = await hearSentence();
-    btn.classList.remove('on'); btn.textContent = label;
-    if (!text) { out.innerHTML = `<p class="feedback wrong">${error === 'not-allowed' || error === 'service-not-allowed' ? 'Please allow the microphone for this site, then try again.' : 'I did not hear anything. Try again and speak clearly.'}</p>`; return null; }
-    const c = compareSentence(it.text, text);
-    it.tries = (it.tries || 0) + 1; it.best = Math.max(it.best || 0, c.pct); it.lastPct = c.pct; it.last = Date.now();
-    const d = day(); d.tries++; if (c.pct >= 80) { d.correct++; d.score += POINTS; }
-    save(); updateChip();
-    const cls = c.pct >= 80 ? 'good' : c.pct >= 50 ? 'mid' : 'low';
-    out.innerHTML = `<div class="pscore ${cls}"><span class="pscore-num">${c.pct}%</span><span class="pscore-lbl">of the words were right${c.pct >= 80 ? ` · +${POINTS} points` : ''}</span></div>
-      ${c.html}<p class="hint">I heard: “${esc(text)}”</p>`;
-    return c.pct;
+    if (playing) playing.pause();
+    playing = new Audio(url); playing.play().catch(() => {});
   }
+  const sentenceBox = (it) => (SC ? SC.sentenceHtml(it.text) : esc(it.text));
 
   function sentHtml(it, fresh) {
-    const meta = it.tries ? `best ${it.best}% · last ${it.lastPct}% · ${it.tries} ${it.tries === 1 ? 'try' : 'tries'}` : 'not tested yet';
+    const meta = it.tries ? `best ${it.best}% · last ${it.lastPct}% · ${it.tries} ${it.tries === 1 ? 'try' : 'tries'}` : 'not practised yet';
     return `<div class="sent-item${fresh ? ' fresh' : ''}" data-id="${esc(it.id)}">
-      <div class="sent-text" lang="${L.code}">${esc(it.text)}</div>
+      <div class="sent-text s-show" lang="${L.code}">${sentenceBox(it)}</div>
       ${it.en ? `<div class="sent-en">${esc(it.en)}</div>` : ''}
       <div class="sent-meta">${meta}</div>
       <div class="sent-acts">
         <button type="button" class="btn listen-btn small" data-sact="say">▶ Listen</button>
         <button type="button" class="btn ghost small" data-sact="slow">🐢 Slowly</button>
-        <button type="button" class="btn mic-btn small" data-sact="test">🎙️ Test it</button>
+        <button type="button" class="btn mic-btn small" data-sact="go">🔁 Listen, then repeat</button>
+        <button type="button" class="btn voice-btn small" data-sact="mine"${voices[it.id] ? '' : ' disabled title="Say the sentence first"'}>🎧 My voice</button>
         <button type="button" class="del" data-sact="del" title="Delete">✕</button>
       </div>
+      <p class="s-status sent-status" aria-live="polite"></p>
       <div class="sent-res" aria-live="polite"></div>
     </div>`;
+  }
+  // Put the meaning into the sentence's card without redrawing the list (a practice try may be going on in it).
+  function showMeaning(it) {
+    const item = $('sList').querySelector(`.sent-item[data-id="${it.id}"]`);
+    if (!item) return;
+    let el = item.querySelector('.sent-en');
+    if (!el) { el = document.createElement('div'); el.className = 'sent-en'; item.querySelector('.sent-text').insertAdjacentElement('afterend', el); }
+    el.textContent = it.en;
   }
   let lastFresh = [];
   function renderSents(freshIds = lastFresh) {
@@ -810,17 +857,17 @@
     const it = db.sents.find((x) => x.id === item.dataset.id);
     if (!it) return;
     const act = b.dataset.sact;
-    if (act === 'say') say(it.text);
-    else if (act === 'slow') say(it.text, true);
+    if (act === 'say') SC ? SC.speak(it.text, { box: item.querySelector('.sent-text'), voice: voice(), rate: rate() }) : say(it.text);
+    else if (act === 'slow') SC ? SC.speak(it.text, { box: item.querySelector('.sent-text'), voice: voice(), rate: 0.7 }) : say(it.text, true);
+    else if (act === 'mine') playVoice(it.id);
     else if (act === 'del') { if (confirm(`Delete this sentence?\n\n${it.text}`)) { db.sents = db.sents.filter((x) => x !== it); save(); renderSents(); } }
-    else if (act === 'test') {
-      const out = item.querySelector('.sent-res');
-      const pct = await testSentence(it, b, out);
-      if (pct !== null) item.querySelector('.sent-meta').textContent = `best ${it.best}% · last ${it.lastPct}% · ${it.tries} ${it.tries === 1 ? 'try' : 'tries'}`;
+    else if (act === 'go') {
+      const pct = await shadowSentence(it, { box: item.querySelector('.sent-text'), go: b, mine: item.querySelector('[data-sact=mine]'), out: item.querySelector('.sent-res'), status: item.querySelector('.sent-status') });
+      if (pct !== null && pct !== undefined) item.querySelector('.sent-meta').textContent = `best ${it.best}% · last ${it.lastPct}% · ${it.tries} ${it.tries === 1 ? 'try' : 'tries'}`;
     }
   });
 
-  // ---- Review: one sentence after another, weakest first ----
+  // ---- Review: one sentence after another, weakest first, with the same shadowing practice ----
   const rv = { list: [], i: 0, scores: [] };
   $('sReview').addEventListener('click', () => {
     if (!db.sents.length) return;
@@ -829,42 +876,45 @@
     hide('sAddCard', 'sListCard', 'sDone'); show('sRun');
     reviewStep();
   });
+  function showReviewText(it) {
+    $('sShow').innerHTML = `<div class="sent-text s-show" lang="${L.code}">${sentenceBox(it)}</div>${it.en ? `<div class="sent-en">${esc(it.en)}</div>` : ''}`;
+    $('sTune').innerHTML = SC ? SC.expectedTune(it.text).why : '';
+    hide('sReveal');
+  }
   function reviewStep() {
     const it = rv.list[rv.i];
     const hidden = $('sHide').checked;
     $('sProgress').textContent = `Sentence ${rv.i + 1} of ${rv.list.length}`;
     $('sBar').style.width = Math.round((rv.i / rv.list.length) * 100) + '%';
-    $('sShow').innerHTML = hidden
-      ? `<div class="sent-hidden">• • • listen and repeat • • •</div>`
-      : `<div class="sent-text" lang="${L.code}">${esc(it.text)}</div>${it.en ? `<div class="sent-en">${esc(it.en)}</div>` : ''}`;
-    $('sReveal').classList.toggle('hidden', !hidden);
-    $('sResult').innerHTML = '';
+    if (hidden) { $('sShow').innerHTML = '<div class="sent-hidden">• • • listen and repeat • • •</div>'; $('sTune').innerHTML = ''; show('sReveal'); }
+    else showReviewText(it);
+    $('sResult').innerHTML = ''; $('sStatus').textContent = '';
+    $('sTest').textContent = '🔁 Listen, then repeat';
+    $('sMine').disabled = !voices[it.id];
     $('sNext').textContent = rv.i + 1 >= rv.list.length ? 'Finish ✓' : 'Next ⏭';
-    say(it.text);
+    if (SC) SC.speak(it.text, { box: $('sShow').querySelector('.sent-text'), voice: voice(), rate: rate() }); else say(it.text);
   }
-  $('sListen').addEventListener('click', () => say(rv.list[rv.i].text));
-  $('sSlow').addEventListener('click', () => say(rv.list[rv.i].text, true));
-  $('sReveal').addEventListener('click', () => {
-    const it = rv.list[rv.i];
-    $('sShow').innerHTML = `<div class="sent-text" lang="${L.code}">${esc(it.text)}</div>${it.en ? `<div class="sent-en">${esc(it.en)}</div>` : ''}`;
-    hide('sReveal');
-  });
+  $('sListen').addEventListener('click', () => { const it = rv.list[rv.i]; if (SC) SC.speak(it.text, { box: $('sShow').querySelector('.sent-text'), voice: voice(), rate: rate() }); else say(it.text); });
+  $('sSlow').addEventListener('click', () => { const it = rv.list[rv.i]; if (SC) SC.speak(it.text, { box: $('sShow').querySelector('.sent-text'), voice: voice(), rate: 0.7 }); else say(it.text, true); });
+  $('sReveal').addEventListener('click', () => showReviewText(rv.list[rv.i]));
+  $('sMine').addEventListener('click', () => playVoice(rv.list[rv.i].id));
   $('sTest').addEventListener('click', async () => {
-    const pct = await testSentence(rv.list[rv.i], $('sTest'), $('sResult'));
-    if (pct !== null) { rv.scores[rv.i] = pct; if ($('sHide').checked) $('sReveal').click(); }
+    const it = rv.list[rv.i];
+    const pct = await shadowSentence(it, { box: $('sShow').querySelector('.sent-text'), go: $('sTest'), mine: $('sMine'), out: $('sResult'), status: $('sStatus') });
+    if (pct !== null && pct !== undefined) { rv.scores[rv.i] = Math.max(rv.scores[rv.i] || 0, pct); if ($('sHide').checked) showReviewText(it); }
   });
   function reviewDone() {
-    if (sRec) sRec.stop();
+    if (shadowBusy) shadowBusy.stop();
     if (canSpeak) speechSynthesis.cancel();
     hide('sRun'); show('sDone');
     const done = rv.scores.filter((x) => x !== undefined);
     const avg = done.length ? Math.round(done.reduce((a, b) => a + b, 0) / done.length) : null;
     const weak = rv.list.filter((x, k) => rv.scores[k] !== undefined && rv.scores[k] < 80);
     $('sSummary').innerHTML = `<div class="big-num">${avg === null ? '–' : avg + '%'}</div>
-      <div class="line">average over ${done.length} tested sentence${done.length === 1 ? '' : 's'} (of ${rv.list.length}) · today's score: <b>${(db.days[todayKey()] || {}).score || 0}</b> points</div>
+      <div class="line">average match over ${done.length} practised sentence${done.length === 1 ? '' : 's'} (of ${rv.list.length}) · today's score: <b>${(db.days[todayKey()] || {}).score || 0}</b> points</div>
       ${weak.length ? `<div class="line">To practise again: ${weak.map((x) => `<b lang="${L.code}">${esc(x.text)}</b>`).join(' · ')}</div>` : ''}`;
   }
-  $('sNext').addEventListener('click', () => { if (sRec) sRec.stop(); rv.i++; if (rv.i >= rv.list.length) reviewDone(); else reviewStep(); });
+  $('sNext').addEventListener('click', () => { if (shadowBusy) shadowBusy.stop(); rv.i++; if (rv.i >= rv.list.length) reviewDone(); else reviewStep(); });
   $('sStop').addEventListener('click', reviewDone);
   $('sBack').addEventListener('click', () => { hide('sDone', 'sRun'); show('sAddCard', 'sListCard'); renderSents(); });
 

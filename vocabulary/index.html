@@ -197,6 +197,7 @@
         <div class="row" style="margin-top:0; margin-bottom:12px">
           <button id="sReview" class="btn nav-btn" type="button">🔁 Review my sentences</button>
           <label class="check slow-check"><input type="checkbox" id="sHide"> 🙈 Hide the text when I review (listening practice)</label>
+          <label class="check slow-check"><input type="checkbox" id="sSlowAll"> 🐢 Slow voice</label>
         </div>
         <div id="sEmpty" class="empty hidden">No sentences yet. Add one above: paste it, type it, or say it with 🎙️.</div>
         <div id="sList" class="sent-list"></div>
@@ -206,14 +207,19 @@
         <div class="run-head"><span id="sProgress" class="counter"></span><button id="sStop" class="btn ghost small" type="button">Stop</button></div>
         <div class="progress"><div id="sBar" class="bar"></div></div>
         <div id="sShow" class="sent-show"></div>
-        <div class="row center">
+        <p id="sTune" class="hint center"></p>
+        <div class="row center v-actions">
           <button id="sListen" class="btn listen-btn" type="button">▶ Listen</button>
-          <button id="sSlow" class="btn ghost" type="button">🐢 Slowly</button>
-          <button id="sTest" class="btn mic-btn big-go" type="button">🎙️ Say it</button>
-          <button id="sReveal" class="btn ghost hidden" type="button">👁️ Show the text</button>
+          <button id="sTest" class="btn mic-btn big-go" type="button">🔁 Listen, then repeat</button>
+          <button id="sMine" class="btn voice-btn" type="button" disabled title="Say the sentence first">🎧 My voice</button>
         </div>
+        <div class="row center v-nav">
+          <button id="sSlow" class="btn ghost" type="button">🐢 Slowly</button>
+          <button id="sReveal" class="btn ghost hidden" type="button">👁️ Show the text</button>
+          <button id="sNext" class="btn nav-btn" type="button">Next ⏭</button>
+        </div>
+        <p id="sStatus" class="s-status center" aria-live="polite"></p>
         <div id="sResult" aria-live="polite"></div>
-        <div class="row center"><button id="sNext" class="btn nav-btn" type="button">Next ⏭</button></div>
       </div>
       <div id="sDone" class="card hidden">
         <h2>Review finished</h2>
@@ -226,7 +232,8 @@
   <footer class="foot"><a class="home-link" href="../">Practice with Sharaf</a> · Vocabulary</footer>
   <script src="../spanish.js?v=20261120a"></script>
   <script src="../english.js?v=20261120a"></script>
-  <script src="app.js?v=20261121d"></script>
+  <script src="../shadow-core.js?v=20261122a"></script>
+  <script src="app.js?v=20261122b"></script>
   <script type="module" src="../account.js?v=20261121a"></script>
 </body>
 </html>
