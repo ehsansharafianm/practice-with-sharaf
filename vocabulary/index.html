@@ -50,7 +50,7 @@
     <section id="tab-cards" class="panel">
       <div id="cSetup" class="card">
         <h2>Flashcards</h2>
-        <p class="hint">See and hear a word, think of its meaning, then turn the card. Words you don't know come back sooner.</p>
+        <p class="hint">Guess the meaning, then turn the card.</p>
         <div class="row" style="align-items:center">
           <label class="voice-pick">Topic <select id="cTopic"></select></label>
           <label class="voice-pick">Cards <select id="cCount"><option value="10">10</option><option value="20" selected>20</option><option value="40">40</option></select></label>
@@ -83,7 +83,7 @@
     <section id="tab-quiz" class="panel">
       <div id="qSetup" class="card">
         <h2>Quiz</h2>
-        <p class="hint">Choose the right answer. A right answer = 10 points.</p>
+        <p class="hint">Right answer = 10 points.</p>
         <div class="row" style="align-items:center">
           <label class="voice-pick">Topic <select id="qTopic"></select></label>
           <label class="voice-pick">Type
@@ -145,13 +145,13 @@
         </div>
         <p id="mMsg" class="hint" aria-live="polite"></p>
         <div id="mDone" class="m-done hidden" aria-live="polite">
-          <p class="m-done-head">✓ Added <b id="dWord"></b> to <b>My library</b>. Practise it now:</p>
+          <p class="m-done-head">✓ Added <b id="dWord"></b>. Practise it:</p>
           <div id="dCard" class="word-grid one"></div>
           <div class="row">
-            <button id="dCards" class="btn nav-btn" type="button">🃏 Flashcards with my library</button>
-            <button id="dQuiz" class="btn fav-btn" type="button">❓ Quiz with my library</button>
-            <button id="dLib" class="btn ghost" type="button">📚 Open My library</button>
-            <button id="dMore" class="btn primary" type="button">➕ Add another word</button>
+            <button id="dCards" class="btn nav-btn" type="button">🃏 Flashcards</button>
+            <button id="dQuiz" class="btn fav-btn" type="button">❓ Quiz</button>
+            <button id="dLib" class="btn ghost" type="button">📚 My library</button>
+            <button id="dMore" class="btn primary" type="button">➕ Add another</button>
           </div>
         </div>
       </div>
@@ -164,14 +164,13 @@
           <h2>My library <span id="mCount" class="muted"></span></h2>
           <input id="mSearch" type="search" placeholder="Search…" aria-label="Search my library">
         </div>
-        <p class="hint">All the words you added. ▶ listen · 🐢 slowly · 🎙️ say it · ✕ remove.</p>
         <div id="libFilter" class="topic-chips" role="group" aria-label="Show"></div>
         <div class="row" style="margin-top:0; margin-bottom:12px">
           <button id="libCards" class="btn nav-btn" type="button">🃏 Flashcards</button>
           <button id="libQuiz" class="btn fav-btn" type="button">❓ Quiz</button>
           <button id="libAdd" class="btn primary" type="button">➕ Add word</button>
         </div>
-        <div id="mEmpty" class="empty hidden">Your library is empty. Add words in <b>➕ Add word</b>: type them or say them.</div>
+        <div id="mEmpty" class="empty hidden">Your library is empty. Add words in <b>➕ Add word</b>.</div>
         <div id="mGrid" class="word-grid"></div>
       </div>
     </section>
@@ -195,11 +194,11 @@
           <input id="sSearch" type="search" placeholder="Search…" aria-label="Search my sentences">
         </div>
         <div class="row" style="margin-top:0; margin-bottom:12px">
-          <button id="sReview" class="btn nav-btn" type="button">🔁 Review my sentences</button>
-          <label class="check slow-check"><input type="checkbox" id="sHide"> 🙈 Hide the text when I review (listening practice)</label>
+          <button id="sReview" class="btn nav-btn" type="button">🔁 Review</button>
+          <label class="check slow-check"><input type="checkbox" id="sHide"> 🙈 Hide text</label>
           <label class="check slow-check"><input type="checkbox" id="sSlowAll"> 🐢 Slow voice</label>
         </div>
-        <div id="sEmpty" class="empty hidden">No sentences yet. Add one above: paste it, type it, or say it with 🎙️.</div>
+        <div id="sEmpty" class="empty hidden">No sentences yet. Add one above.</div>
         <div id="sList" class="sent-list"></div>
       </div>
 
@@ -233,7 +232,7 @@
   <script src="../spanish.js?v=20261120a"></script>
   <script src="../english.js?v=20261120a"></script>
   <script src="../shadow-core.js?v=20261122a"></script>
-  <script src="app.js?v=20261122b"></script>
+  <script src="app.js?v=20261122c"></script>
   <script type="module" src="../account.js?v=20261121a"></script>
 </body>
 </html>

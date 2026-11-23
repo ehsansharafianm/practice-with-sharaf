@@ -36,7 +36,7 @@
     <section id="tab-practise" class="panel">
       <div class="card">
         <h2>Add a sentence</h2>
-        <p class="hint">Type a sentence, or click <b>Say a sentence</b> and say it. Then listen to the <span class="L-accent">American</span> voice and repeat it right after, copying the rhythm and the melody (intonation).</p>
+        <p class="hint">Type or say a sentence, then repeat it after the <span class="L-accent">American</span> voice.</p>
         <form id="sForm" autocomplete="off">
           <textarea id="sText" rows="2" maxlength="160" placeholder="e.g. Could you tell me where the station is?" data-ph-es="p. ej. ¿Me puedes decir dónde está la estación?"></textarea>
           <div class="s-count muted"><span id="sCount">0</span> / <span id="sMax">20</span> words</div>
@@ -59,7 +59,7 @@
           </label>
           <button id="sListen" class="btn ghost" type="button">▶ Listen</button>
           <label class="check slow-check"><input type="checkbox" id="slowBox"> 🐢 Slow</label>
-          <label class="check slow-check" title="Use headphones, so the microphone hears only you"><input type="checkbox" id="alongBox"> 🎧 Speak along (headphones)</label>
+          <label class="check slow-check" title="Use headphones, so the microphone hears only you"><input type="checkbox" id="alongBox"> 🎧 Speak along</label>
         </div>
         <p class="hint voice-note" id="voiceNote"></p>
         </div></div>
@@ -79,24 +79,23 @@
     <section id="tab-text" class="panel">
       <div id="tSetup" class="card">
         <h2>Shadow a whole text</h2>
-        <p class="hint">Paste a text or import a text file. The page splits it into sentences and goes through them on its own:
-          it reads a sentence, you repeat it, you get a score, and the next sentence starts by itself.</p>
-        <textarea id="tText" rows="7" maxlength="12000" placeholder="Paste a short text here, for example a paragraph from a book, an article or a dialogue." data-ph-es="Pega aquí un texto corto, por ejemplo un párrafo de un libro, un artículo o un diálogo."></textarea>
+        <p class="hint">Paste or import a text. You repeat it sentence by sentence and get a score for each.</p>
+        <textarea id="tText" rows="7" maxlength="12000" placeholder="Paste a short text here." data-ph-es="Pega aquí un texto corto."></textarea>
         <div class="row" style="margin-top:8px; align-items:center">
-          <label class="btn ghost file-btn">📄 Import a text file (.txt)
+          <label class="btn ghost file-btn">📄 Import .txt
             <input id="tFile" type="file" accept=".txt,.md,text/plain" hidden>
           </label>
           <span id="tCount" class="muted"></span>
         </div>
         <div class="row" style="align-items:center">
-          <label class="voice-pick">Break between sentences
+          <label class="voice-pick">Break
             <select id="tGap">
               <option value="2">2 seconds</option>
               <option value="4" selected>4 seconds</option>
               <option value="7">7 seconds</option>
             </select>
           </label>
-          <label class="check slow-check"><input type="checkbox" id="tSave"> Also save the sentences to My sentences</label>
+          <label class="check slow-check"><input type="checkbox" id="tSave"> Save to My sentences</label>
         </div>
         <p id="tMsg" class="hint" aria-live="polite"></p>
         <button id="tStart" class="btn primary" type="button">▶ Start shadowing</button>
@@ -123,14 +122,14 @@
         <div class="table-wrap">
           <table id="tTable" class="click-rows score-rows"><thead><tr><th>#</th><th>Sentence</th><th>Match</th><th></th></tr></thead><tbody></tbody></table>
         </div>
-        <p class="hint">Click a scored sentence to see its analysis and melody chart. ▶ the voice · 🎧 your voice · 🔁 practise it again · ✕ remove it from this text.</p>
+        <p class="hint">Click a sentence to see its analysis.</p>
       </div>
 
       <div id="tDone" class="card hidden">
         <h2>Text finished</h2>
         <div id="tSummary" class="summary"></div>
         <div class="row">
-          <button id="tWeak" class="btn primary" type="button">Practise the weak sentences again</button>
+          <button id="tWeak" class="btn primary" type="button">Practise weak sentences</button>
           <button id="tNew" class="btn ghost" type="button">Shadow another text</button>
         </div>
       </div>
@@ -140,8 +139,7 @@
     <section id="tab-video" class="panel active">
       <div id="vSetup" class="card">
         <h2>Shadow a YouTube video</h2>
-        <p class="hint">Paste a link to a YouTube video in <span class="L-name">English</span>. The page finds its sentences, plays them one by one in the speaker's real voice,
-          and you repeat each one. Videos need <span class="L-name">English</span> captions (most have at least automatic ones).</p>
+        <p class="hint">Paste a YouTube link (<span class="L-name">English</span> captions needed). Repeat each sentence after the speaker.</p>
         <form id="vForm" class="row" style="margin-top:0" autocomplete="off">
           <input id="vLink" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" aria-label="YouTube link" style="flex:1; min-width:220px; margin-top:0">
           <button id="vLoad" class="btn primary" type="submit">Load video</button>
@@ -149,8 +147,7 @@
         <p id="vMsg" class="hint" aria-live="polite"></p>
         <details id="vPasteBox" class="paste-box">
           <summary>Or paste the transcript yourself</summary>
-          <p class="hint">On YouTube, open the video, click <b>…more</b> under it, then <b>Show transcript</b>. Select all the lines (with their times),
-            copy them and paste them here. Also paste the video link above.</p>
+          <p class="hint">On YouTube: <b>…more</b> → <b>Show transcript</b>. Copy all lines with times. Keep the link above.</p>
           <textarea id="vPaste" rows="6" maxlength="200000" placeholder="0:12&#10;So in college,&#10;0:15&#10;I was a government major," data-ph-es="0:12\nCuando era pequeño,\n0:15\nvivía en un pueblo de Galicia."></textarea>
           <div class="row"><button id="vUsePaste" class="btn ghost" type="button">Use this transcript</button></div>
         </details>
@@ -159,8 +156,6 @@
 
       <div id="vLib" class="card hidden">
         <h2>My videos <span id="vLibCount" class="muted"></span></h2>
-        <p class="hint">The videos you practised are kept here with your place and scores. <b>Continue</b> where you stopped,
-          or <b>Start over</b> to practise the whole video again (your best round is kept).</p>
         <div id="vLibList" class="vl-list"></div>
       </div>
 
@@ -193,7 +188,7 @@
         </div>
         <div class="row center" style="align-items:center; margin-top:8px">
           <label class="check slow-check"><input type="checkbox" id="vSlow"> 🐢 Slow (0.75×)</label>
-          <label class="check slow-check"><input type="checkbox" id="vOn"> Go on to the next sentence by itself</label>
+          <label class="check slow-check"><input type="checkbox" id="vOn"> Auto next</label>
         </div>
         <div class="row center" style="margin-top:4px"><button id="vDoneSpeak" class="btn mic-btn hidden" type="button">✓ Done speaking</button></div>
         <p id="vStatus" class="s-status center" aria-live="polite"></p>
@@ -202,7 +197,7 @@
         <div class="table-wrap v-list">
           <table id="vTable" class="click-rows score-rows"><thead><tr><th>#</th><th>Time</th><th>Sentence</th><th>Match</th><th></th></tr></thead><tbody></tbody></table>
         </div>
-        <p class="hint">Click a sentence to go to it. ▶ the speaker · 🎧 your voice.</p>
+        <p class="hint">Click a sentence to go to it.</p>
       </div>
     </section>
 
@@ -221,7 +216,7 @@
           </table>
         </div>
         <div class="row"><button id="lPractise" class="btn primary" type="button">Practise my sentences</button></div>
-        <p class="hint">Click a sentence to shadow it again. "Practise" starts with your weakest sentences.</p>
+        <p class="hint">Click a sentence to practise it.</p>
       </div>
       <div class="card">
         <h2>Today</h2>
@@ -231,7 +226,7 @@
           <div class="stat"><div class="stat-val" id="tTries">0</div><div class="stat-lbl">Tries</div></div>
           <div class="stat"><div class="stat-val" id="tNew">0</div><div class="stat-lbl">New sentences</div></div>
         </div>
-        <p class="hint">A try with a match of 80% or more = 10 points.</p>
+        <p class="hint">80% or more = 10 points.</p>
       </div>
     </section>
 
@@ -239,8 +234,7 @@
     <section id="tab-fav" class="panel">
       <div class="card">
         <h2>Add favorite sentences</h2>
-        <p class="hint">Bring the sentences you love and want to say perfectly. Put <b>one sentence on each line</b>.
-          Sentences longer than 20 words are cut into shorter parts.</p>
+        <p class="hint">One sentence per line.</p>
         <textarea id="fText" rows="5" maxlength="6000" placeholder="e.g.&#10;I'd rather be safe than sorry.&#10;Could you give me a hand with this?" data-ph-es="p. ej.\nMás vale prevenir que curar.\n¿Me echas una mano con esto?"></textarea>
         <div class="row" style="margin-top:8px">
           <button id="fAdd" class="btn primary" type="button">⭐ Add to favorites</button>
@@ -252,7 +246,7 @@
           <h2>My favorite sentences <span id="fCount" class="muted"></span></h2>
           <input id="fSearch" type="search" placeholder="Search…">
         </div>
-        <div id="fEmpty" class="empty hidden">No favorites yet. Add your sentences above, or click ☆ next to any sentence in “My sentences”.</div>
+        <div id="fEmpty" class="empty hidden">No favorites yet.</div>
         <div class="table-wrap">
           <table id="fTable" class="click-rows">
             <thead><tr><th>Sentence</th><th>Best</th><th>Last</th><th>Tries</th><th></th></tr></thead>
@@ -260,14 +254,14 @@
           </table>
         </div>
         <div class="row"><button id="fPractise" class="btn primary" type="button">Practise my favorites</button></div>
-        <p class="hint">Click a sentence to shadow it. "Practise my favorites" goes through all of them, weakest first. ✎ edits a sentence. ★ takes it out of favorites but keeps it in My sentences. ✕ deletes it completely.</p>
+        <p class="hint">Click a sentence to practise it. ✎ edit · ★ unfavorite · ✕ delete</p>
       </div>
     </section>
   </main>
 
   <footer class="foot"><a class="home-link" href="../">Practice with Sharaf</a> · Shadowing Practice</footer>
   <script src="../spanish.js?v=20261120a"></script>
-  <script src="app.js?v=20261120y"></script>
+  <script src="app.js?v=20261122c"></script>
   <script type="module" src="../account.js?v=20261121a"></script>
 </body>
 </html>

@@ -102,13 +102,13 @@
   function expectedTune(text) {
     const t = clean(text), first = core(t.split(' ')[0] || '');
     if (/\?\s*$/.test(t)) {
-      if (startsWh(t)) return { end: 'fall', why: ES ? 'This is a <b>question with a question word</b> (qué, dónde, cómo…): the voice <b>falls</b> at the end ↘.' : 'This is a <b>wh- question</b> (what, where, how…): the voice <b>falls</b> at the end ↘.' };
-      if (ES) return { end: 'rise', why: 'This is a <b>yes/no question</b> (¿…?): the voice <b>rises</b> at the end ↗. In Spanish only the melody turns a sentence into a question.' };
-      return { end: 'rise', why: AUX.has(first) ? 'This is a <b>yes/no question</b>: the voice <b>rises</b> at the end ↗.' : 'This is a question: the voice <b>rises</b> at the end ↗.' };
+      if (startsWh(t)) return { end: 'fall', why: ES ? '<b>Question word</b> (qué, dónde…): voice <b>falls</b> ↘.' : '<b>Wh- question</b>: voice <b>falls</b> ↘.' };
+      if (ES) return { end: 'rise', why: '<b>Yes/no question</b>: voice <b>rises</b> ↗.' };
+      return { end: 'rise', why: AUX.has(first) ? '<b>Yes/no question</b>: voice <b>rises</b> ↗.' : '<b>Question</b>: voice <b>rises</b> ↗.' };
     }
-    if (/[,;:]\s*$/.test(t) || !/[.!?]["'”’)\]]*\s*$/.test(t)) return { end: 'rise', soft: true, why: 'This part continues the sentence: keep your voice <b>up</b> (or a small rise ↗). Don\'t let it fall yet.' };
-    if (/!\s*$/.test(t)) return { end: 'fall', why: 'This is an exclamation: strong stress, and the voice <b>falls</b> at the end ↘.' };
-    return { end: 'fall', why: 'This is a <b>statement</b>: the voice <b>falls</b> at the end ↘.' };
+    if (/[,;:]\s*$/.test(t) || !/[.!?]["'”’)\]]*\s*$/.test(t)) return { end: 'rise', soft: true, why: '<b>Unfinished</b>: keep your voice <b>up</b> ↗.' };
+    if (/!\s*$/.test(t)) return { end: 'fall', why: '<b>Exclamation</b>: voice <b>falls</b> ↘.' };
+    return { end: 'fall', why: '<b>Statement</b>: voice <b>falls</b> ↘.' };
   }
   function sentenceHtml(text) {
     const tune = expectedTune(text);
@@ -148,11 +148,10 @@
     sel.innerHTML = list.map((v) => `<option value="${esc(v.name)}">${esc(label(v))}</option>`).join('') || '<option value="">Default voice</option>';
     if (list.some((v) => v.name === cur)) sel.value = cur;
     const natural = list.some((v) => quality(v) >= 3);
-    $('voiceNote').innerHTML = !canSpeak ? 'This browser cannot read sentences aloud. Try Microsoft Edge or Chrome.'
-      : natural ? 'Voices marked ★ are natural voices with the most human-like intonation.'
-      : !list.length ? `This device has no ${L.name} voice. Open this page in <b>Microsoft Edge</b>, which has free natural ${L.name} voices.`
-      : ES ? 'Tip: for the most natural Spanish voices and intonation, open this page in <b>Microsoft Edge</b>. It has free natural voices from Spain (Elvira, Álvaro…).'
-      : 'Tip: for the most natural American voices and intonation, open this page in <b>Microsoft Edge</b>. It has free natural voices (Aria, Jenny, Guy, Andrew…).';
+    $('voiceNote').innerHTML = !canSpeak ? 'This browser cannot speak. Try Edge or Chrome.'
+      : natural ? '★ = natural voice.'
+      : !list.length ? `No ${L.name} voice on this device. Try <b>Microsoft Edge</b>.`
+      : 'Tip: <b>Microsoft Edge</b> has more natural voices.';
   }
   if (canSpeak) { speechSynthesis.addEventListener('voiceschanged', fillVoices); speechSynthesis.getVoices(); }
   $('voiceSel').addEventListener('change', () => { try { localStorage.setItem(VOICE_KEY, $('voiceSel').value); } catch (e) { /* ignore */ } });
@@ -185,11 +184,11 @@
   let mic = null;
   function micMessage(error) {
     return {
-      'not-allowed': 'Please allow the microphone for this site (click the lock icon in the address bar), then try again.',
-      'service-not-allowed': 'Please allow the microphone for this site, then try again.',
-      'no-speech': 'I did not hear anything. Try again and speak clearly.',
+      'not-allowed': 'Allow the microphone (lock icon in the address bar), then try again.',
+      'service-not-allowed': 'Allow the microphone, then try again.',
+      'no-speech': 'I heard nothing. Try again.',
       'audio-capture': 'No microphone found.',
-      network: 'Checking your speech needs an internet connection.'
+      network: 'Speech checking needs internet.'
     }[error] || '';
   }
   // Records once (and recognises, when the browser can). maxSec stops it in any case.
@@ -299,7 +298,7 @@
     $('voiceSlotOne').appendChild($('voiceBox'));
     $('sShow').innerHTML = sentenceHtml(s.text);
     const tune = expectedTune(s.text);
-    $('sTune').innerHTML = `${tune.why} <b>Bold</b> words carry the stress: say them a little louder, longer and higher.`;
+    $('sTune').innerHTML = `${tune.why} <b>Bold</b> = stressed.`;
     $('sResult').innerHTML = ''; $('sStatus').textContent = '';
     $('sMine').classList.add('hidden');
     $('sNext').classList.toggle('hidden', !queue.length);
@@ -556,7 +555,7 @@
       ${pct !== null ? `<div class="pscore ${cls}"><span class="pscore-num">${pct}%</span><span class="pscore-lbl">match with the model${pct >= 80 ? ' · +10 points' : ''}</span></div>` : ''}
       ${wordsHtml}${chart}
       ${tips.length ? `<ul class="ptips">${tips.map((t) => `<li>${t}</li>`).join('')}</ul>` : ''}
-      ${!haveSR ? '<p class="hint">Word checking works in Chrome and Edge. Here you can still compare your melody and play back your voice.</p>' : ''}` };
+      ${!haveSR ? '<p class="hint">Word checking needs Chrome or Edge.</p>' : ''}` };
   }
 
 
@@ -815,7 +814,7 @@
       <div class="line">${done.filter((x) => x.r.pct >= 80).length} sentence(s) at 80% or more · today's shadowing score: <b>${(db.days[todayKey()] || {}).score || 0}</b> points.</div>
       <div class="table-wrap" style="margin-top:12px"><table class="click-rows score-rows"><thead><tr><th>#</th><th>Sentence</th><th>Match</th><th></th></tr></thead>
       <tbody id="tSumBody">${rowsHtml('sum')}</tbody></table></div>
-      <p class="hint">Click a sentence to see its analysis and melody chart. ▶ the voice · 🎧 your voice · 🔁 practise it again · ✕ remove it from this text.</p>`;
+      <p class="hint">Click a sentence to see its analysis.</p>`;
     $('tSumBody').onclick = onRows;
     $('tWeak').classList.toggle('hidden', !weak.length);
     $('tWeak').textContent = `Practise the ${weak.length} sentence${weak.length === 1 ? '' : 's'} under 80% again`;
@@ -1153,7 +1152,7 @@
     $('vProgress').textContent = `Sentence ${vid.i + 1} of ${vid.sents.length}`;
     $('vBar').style.width = Math.round((vid.results.filter(Boolean).length / vid.sents.length) * 100) + '%';
     $('vShow').innerHTML = sentenceHtml(s.text);
-    $('vTune').innerHTML = `${expectedTune(s.text).why} <b>Bold</b> words carry the stress.`;
+    $('vTune').innerHTML = `${expectedTune(s.text).why} <b>Bold</b> = stressed.`;
     $('vNotes').innerHTML = speechNotes(s.text).map((n) => `<li>${n}</li>`).join('');
     const r = vid.results[vid.i];
     $('vResult').innerHTML = r && r.html ? r.html : '';

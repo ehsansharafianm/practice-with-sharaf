@@ -223,12 +223,12 @@
     speechSynthesis.speak(u);
   }
   function voiceNote() {
-    if (!canSpeak) return 'This browser cannot read words aloud. Try Chrome or Edge.';
+    if (!canSpeak) return 'This browser cannot speak. Try Chrome or Edge.';
     const f = voiceFor('female'), m = voiceFor('male');
-    if (!f.voice) return `No ${ES ? 'Spanish' : 'American English'} voice found on this device. Microsoft Edge has free natural ${L.name} voices.`;
+    if (!f.voice) return `No ${L.name} voice on this device. Try Microsoft Edge.`;
     const name = (x) => x.voice.name.replace(/^(Microsoft|Google)\s+/, '').replace(/\s*[-–(].*$/, '');
-    let s = `Voices: woman — ${esc(name(f))}${f.fallback ? ' (pitch raised)' : ''}, man — ${esc(name(m))}${m.fallback ? ` (pitch lowered; this device has no man's ${REGION} voice)` : ''}.`;
-    if (f.fallback || m.fallback) s += ' Microsoft Edge has more natural voices.';
+    let s = `👩 ${esc(name(f))} · 👨 ${esc(name(m))}`;
+    if (f.fallback || m.fallback) s += ' · Edge has better voices.';
     return s;
   }
   if (canSpeak) speechSynthesis.addEventListener('voiceschanged', () => { const n = document.querySelector('.voice-note'); if (n) n.innerHTML = voiceNote(); });
@@ -498,7 +498,7 @@
     el.innerHTML = '<p class="muted">Looking up…</p>';
     let parts;
     try { parts = await lookup(clean); } catch (e) {
-      el.innerHTML = '<p class="hint">Could not load the pronunciation list. Check your internet connection and try again.</p>'; return;
+      el.innerHTML = '<p class="hint">Could not load. Check your connection.</p>'; return;
     }
     const known = parts.every((p) => p.variants.length);
     current = { text: clean, parts };
@@ -525,7 +525,7 @@
       </div>
       <p class="hint voice-note">${voiceNote()}</p>
       <h3 class="sub-h">Your turn</h3>
-      ${SR || canRecord ? `<p class="hint">${SR ? 'Say the word. I check it, look at your stress and syllables, and give you a score and tips. You can also play back your voice.' : 'Record yourself and compare with the voices. (Checking your pronunciation works in Chrome and Edge.)'}</p>
+      ${SR || canRecord ? `<p class="hint">${SR ? 'Say the word to get a score and tips.' : 'Record and compare. (Scoring needs Chrome or Edge.)'}</p>
         <div class="row"><button class="btn mic-btn" type="button" id="dMic">🎙️ Say it</button></div>
         <div id="dMicResult" class="mic-result" aria-live="polite"></div>` : '<p class="hint">Recording is not supported in this browser. Try Chrome or Edge.</p>'}
       ${addToList ? '<p class="hint saved-note"></p>' : ''}`;
@@ -750,9 +750,9 @@
     return list;
   }
   const MODE_HINT = {
-    say: SR ? 'You see the word and say it. I check what you said. You can listen first, and you get 3 tries per word.'
-      : 'Checking your speech works in Chrome and Edge. In this browser you can still record and compare yourself.',
-    stress: 'You see the syllables and click the one with the main stress. Then you hear the word.'
+    say: SR ? 'Say each word. 3 tries per word.'
+      : 'Scoring needs Chrome or Edge. You can still record yourself.',
+    stress: 'Click the stressed syllable.'
   };
   function renderSetup() {
     const n = sourceWords().length;
@@ -777,7 +777,7 @@
       // only words with 2+ syllables that are in the pronunciation list
       const ok = await Promise.all(words.map(async (t) => { try { const v = await prons(t); return v.length && v[0].length > 1 && !t.includes(' '); } catch (er) { return false; } }));
       words = words.filter((_, i) => ok[i]);
-      if (!words.length) { $('prModeHint').textContent = 'None of these words has two or more syllables yet. Add longer words, or choose "Say the word".'; return; }
+      if (!words.length) { $('prModeHint').textContent = 'No words with 2+ syllables yet.'; return; }
     }
     // weaker words first, with some shuffling
     words = words.map((t) => ({ t, k: accOf(t, pr.mode) + Math.random() * 0.5 })).sort((a, b) => a.k - b.k).map((x) => x.t);

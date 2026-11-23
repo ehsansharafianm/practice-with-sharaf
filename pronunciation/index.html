@@ -34,7 +34,7 @@
     <section id="tab-word" class="panel active">
       <div class="card">
         <h2>Add a new word</h2>
-        <p class="hint">Type a word, or click <b>Say a word</b> and say it, to see its <span class="L-accent">American</span> pronunciation: phonetics, syllables and stress. Listen to a woman's and a man's voice, then record yourself. The word is saved to My words for practice.</p>
+        <p class="hint">Type or say a word to see its <span class="L-accent">American</span> pronunciation.</p>
         <form id="wordForm" autocomplete="off" style="margin-top:4px">
           <div class="row" style="margin-top:0">
             <input id="wordInput" type="text" required maxlength="60" placeholder="e.g. pronunciation" data-ph-es="p. ej. pronunciación"
@@ -53,7 +53,7 @@
     <section id="tab-practice" class="panel">
       <div id="prSetup" class="card">
         <h2>Practise your words</h2>
-        <div id="prEmpty" class="empty hidden">No words yet. Look up a word first, or add words in Dictation.</div>
+        <div id="prEmpty" class="empty hidden">No words yet. Add a word first.</div>
         <form id="prForm">
           <label>What to practise
             <select id="prMode">
@@ -116,14 +116,14 @@
           <h2>My words <span id="wCount" class="muted"></span></h2>
           <input id="wSearch" type="search" placeholder="Search…">
         </div>
-        <div id="wEmpty" class="empty hidden">No words yet. Look up a word in "New word".</div>
+        <div id="wEmpty" class="empty hidden">No words yet. Add one in "Add new word".</div>
         <div class="table-wrap">
           <table id="wTable" class="click-rows">
             <thead><tr><th>Word</th><th>Phonetics</th><th>Saying</th><th>Stress</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
-        <p class="hint">Click a word to see its details again. "Saying" and "Stress" show how often you got it right in practice.</p>
+        <p class="hint">Click a word to open it.</p>
       </div>
       <div class="card">
         <h2>Today</h2>
@@ -133,14 +133,14 @@
           <div class="stat"><div class="stat-val" id="tTries">0</div><div class="stat-lbl">Tries</div></div>
           <div class="stat"><div class="stat-val" id="tNew">0</div><div class="stat-lbl">New words</div></div>
         </div>
-        <p class="hint">Each correct answer = 10 points.</p>
+        <p class="hint">Correct answer = 10 points.</p>
       </div>
     </section>
   </main>
 
   <footer class="foot"><a class="home-link" href="../">Practice with Sharaf</a> · Pronunciation Practice · US English pronunciations from the CMU Pronouncing Dictionary; Spanish worked out from its spelling</footer>
   <script src="../spanish.js?v=20261120a"></script>
-  <script src="app.js?v=20261120a"></script>
+  <script src="app.js?v=20261122c"></script>
   <script type="module" src="../account.js?v=20261121a"></script>
 </body>
 </html>

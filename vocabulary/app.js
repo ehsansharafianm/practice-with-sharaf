@@ -182,7 +182,7 @@
     const { alts, error } = await hear();
     btn.classList.remove('on'); btn.textContent = label;
     if (!alts.length) {
-      out.innerHTML = `<p class="feedback wrong">${error === 'not-allowed' || error === 'service-not-allowed' ? 'Please allow the microphone for this site, then try again.' : 'I did not hear anything. Try again and speak clearly.'}</p>`;
+      out.innerHTML = `<p class="feedback wrong">${error === 'not-allowed' || error === 'service-not-allowed' ? 'Allow the microphone, then try again.' : 'I heard nothing. Try again.'}</p>`;
       return;
     }
     const ok = saidRight(w.es, alts);
@@ -274,7 +274,7 @@
     .sort((a, b) => a.k - b.k).map((x) => x.w);
   $('cStart').addEventListener('click', () => {
     const list = wordsOf($('cTopic').value);
-    if (!list.length) { $('cMsg').textContent = 'Your library is empty. Add words in the ➕ Add word tab first.'; return; }
+    if (!list.length) { $('cMsg').textContent = 'Your library is empty. Add words first.'; return; }
     fc.queue = due(list).slice(0, +$('cCount').value);
     Object.assign(fc, { i: 0, known: 0, missed: [], total: fc.queue.length });
     hide('cSetup', 'cDone'); show('cRun');
@@ -326,7 +326,7 @@
   const qz = { list: [], i: 0, right: 0, missed: [], mode: 'es2en', answered: false };
   $('qStart').addEventListener('click', () => {
     const pool = wordsOf($('qTopic').value);
-    if (pool.length < 4) { $('qMsg').textContent = 'A quiz needs at least 4 words. Add more words to your library in the ➕ Add word tab.'; return; }
+    if (pool.length < 4) { $('qMsg').textContent = 'A quiz needs at least 4 words.'; return; }
     Object.assign(qz, { list: shuffle(due(pool).slice(0, Math.max(+$('qCount').value * 2, 12))).slice(0, +$('qCount').value), i: 0, right: 0, missed: [], mode: $('qMode').value });
     $('qMsg').textContent = '';
     hide('qSetup', 'qDone'); show('qRun');
@@ -420,11 +420,8 @@
   // Words on this page for the language being practised
   $('mLabel').textContent = `${L.name} word or phrase`;
   $('mMeanLabel').textContent = ES ? 'English meaning' : 'Meaning';
-  $('mHint').innerHTML = `Two ways to add a word: <b>type it</b> and click <b>Check word</b>, or click <b>🎙️ Say a word</b> and say it.
-    If the spelling looks wrong, you get the closest ${esc(L.name)} words to choose from. Then you see how to say it and its ${ES ? 'English meaning' : 'meaning'},
-    and you add it to your library. (The word is sent to the free LanguageTool spell checker and ${ES ? 'the MyMemory translation service' : 'the free dictionary at dictionaryapi.dev'}.)`;
-  $('lHint').innerHTML = `Your ${esc(L.name)} words, with their meaning, their sounds (IPA, ${ES ? 'Spain' : 'American'}) and their syllables: the <span class="stress-key">BIG</span> one is stressed.
-    ▶ listen · 🐢 slowly · 🎙️ say it and I check it. Add new words in <b>➕ Add word</b>.`;
+  $('mHint').innerHTML = `Type or say a word. The spelling is checked for you.`;
+  $('lHint').innerHTML = `The <span class="stress-key">BIG</span> syllable is stressed.`;
 
   // Adding a word: check the spelling (LanguageTool), offer the closest words, then a preview
   // (sounds, syllables, meaning) and add it to the library.
@@ -651,9 +648,7 @@
   const sid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const smsg = (t) => { $('sMsg').textContent = t; };
   $('sNew').placeholder = ES ? 'Paste or type sentences here, one per line.\nPor ejemplo: Más vale tarde que nunca.' : 'Paste or type sentences here, one per line.\nFor example: Better late than never.';
-  $('sHint').innerHTML = `Three ways: <b>paste</b> or <b>type</b> sentences (one per line), or click <b>🎙️ Say a sentence</b> and say it.
-    Then shadow it like on the Shadowing page: <b>🔁 Listen, then repeat</b> plays the sentence and records you right after, and you get a score
-    for your words, your melody and your speed, with a chart of your voice and tips. <b>🎧 My voice</b> plays your try back.${ES ? ' The English meaning is found for you (MyMemory translation).' : ''}`;
+  $('sHint').innerHTML = `Paste, type (one per line) or say a sentence.`;
   // Spanish letters for the sentence box
   if (ES) {
     const box = $('sNew');

@@ -35,18 +35,18 @@
     <section id="tab-learn" class="panel active">
       <div id="learnSetup" class="card">
         <h2>Add a new word</h2>
-        <p class="hint">The trainer types the word. The learner then writes it 10 times. After that it goes into the library.</p>
+        <p class="hint">Write it 10 times, then it goes to your library.</p>
         <form id="learnForm" autocomplete="off">
           <label>Word
             <input id="newWord" type="text" required maxlength="60"
                    autocapitalize="off" autocorrect="off" spellcheck="false">
           </label>
-          <label>Meaning or example sentence <span class="opt">(optional)</span>
+          <label>Meaning or example <span class="opt">(optional)</span>
             <input id="newNote" type="text" maxlength="200">
           </label>
           <label class="check">
             <input id="learnHide" type="checkbox">
-            Hide the word while practising (listen only)
+            Listen only (hide the word)
           </label>
           <div id="spellBox" class="spell hidden" aria-live="polite"></div>
           <button id="learnStart" class="btn primary" type="submit">Start practice</button>
@@ -84,7 +84,7 @@
     <section id="tab-review" class="panel">
       <div id="reviewSetup" class="card">
         <h2>Review previous words</h2>
-        <p class="hint">Words are read aloud. Type what you hear. Weaker words come up more often.</p>
+        <p class="hint">Type what you hear. Weak words come up more.</p>
         <div id="reviewEmpty" class="empty hidden">The library is empty. Add a word first.</div>
         <form id="reviewForm">
           <label>How many words
@@ -97,7 +97,7 @@
           </label>
           <label class="check">
             <input id="reviewShow" type="checkbox">
-            Show the word on screen (easier)
+            Show the word (easier)
           </label>
           <button class="btn primary" type="submit">Start review</button>
         </form>
@@ -151,7 +151,7 @@
             <input id="importFile" type="file" accept="application/json,.json" hidden>
           </label>
         </div>
-        <p class="hint">Words are saved in this browser. Use Export / Import to move them to another device.</p>
+        <p class="hint">Export / Import moves words to another device.</p>
       </div>
     </section>
 
@@ -165,9 +165,9 @@
           <div class="stat"><div class="stat-val" id="tTries">0</div><div class="stat-lbl">Tries</div></div>
           <div class="stat"><div class="stat-val" id="tNew">0</div><div class="stat-lbl">New words</div></div>
         </div>
-        <p class="hint">Each correct answer = 10 points.</p>
+        <p class="hint">Correct answer = 10 points.</p>
         <div id="acctHint" class="acct-hint hidden">
-          <span>You are practising as a guest, so your scores are saved only on this device.</span>
+          <span>Guest: scores stay on this device only.</span>
           <button id="acctHintBtn" type="button" class="btn primary small">Sign in to save them</button>
         </div>
       </div>
@@ -179,7 +179,7 @@
   </main>
 
   <footer class="foot"><a class="home-link" href="../">Practice with Sharaf</a> · Dictation Practice</footer>
-  <script src="app.js?v=20261120m"></script>
+  <script src="app.js?v=20261122c"></script>
   <script type="module" src="../account.js?v=20261121a"></script>
 </body>
 </html>
